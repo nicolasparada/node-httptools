@@ -1,9 +1,13 @@
 # [httptools](npm.im/@nicolasparada/httptools)
 
 This package provides with common tools to complement the Node's HTTP server.
-**This package is shipped like a ES module, so run your app with [esm](https://github.com/standard-things/esm):** `node -r esm main.js`.
 
-## Router
+**This package is shipped like a ES module, so run your app with [esm](https://github.com/standard-things/esm):**
+```bash
+node -r esm main.js
+```
+
+## Usage
 ```js
 import { createServer } from 'http'
 import { contextFor, createRouter, respondJSON } from '@nicolasparada/httptools'
@@ -31,9 +35,10 @@ server.listen(80, '127.0.0.1', () => {
 ```
 
 To get URL params, use regular expressions. Then you can get an array with all the parameters using `contextFor(req).get('params')`.
+
 To group endpoints, you can create multiple router instances and pass the `requestListener` to other routers.
 
-### JSON Body Middleware
+### Middlewares
 ```js
 import { contextFor, decodeJSON, respondJSON } from '@nicolasparada/http-tools'
 
@@ -71,4 +76,5 @@ const middleware = next => (req, res) => {
 }
 ```
 Add values to the context like so: `contextFor(req).set('foo', 'bar')`.
+
 `decodeJSON` and `respondJSON` are self explanatories.
