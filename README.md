@@ -1,4 +1,4 @@
-# httptools
+# [httptools](npm.im/@nicolasparada/httptools)
 
 This package provides with common tools to complement the Node's HTTP server.
 **This package is shipped like a ES module, so run your app with [esm](https://github.com/standard-things/esm):** `node -r esm main.js`.
@@ -6,7 +6,7 @@ This package provides with common tools to complement the Node's HTTP server.
 ## Router
 ```js
 import { createServer } from 'http'
-import { contextFor, createRouter, respondJSON } from 'httptools'
+import { contextFor, createRouter, respondJSON } from '@nicolasparada/httptools'
 
 const api = createRouter({ prefix: '/api' })
 api.handle('GET', /^\/hello\/([^\/]+)$/, helloHandler)
@@ -35,7 +35,7 @@ To group endpoints, you can create multiple router instances and pass the `reque
 
 ### JSON Body Middleware
 ```js
-import { contextFor, decodeJSON, respondJSON } from 'http-tools'
+import { contextFor, decodeJSON, respondJSON } from '@nicolasparada/http-tools'
 
 const withJSONBody = next => async (req, res) => {
     const ct = req.headers['content-type']

@@ -1,5 +1,5 @@
 {
-  "name": "httptools",
+  "name": "@nicolasparada/httptools",
   "version": "0.1.0",
   "description": "HTTP Tools",
   "main": "httptools.js",
