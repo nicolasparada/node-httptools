@@ -1,0 +1,24 @@
+{
+  "name": "httptools",
+  "version": "0.1.0",
+  "description": "HTTP Tools",
+  "main": "httptools.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicolasparada/node-httptools.git"
+  },
+  "keywords": [
+    "router",
+    "context",
+    "json"
+  ],
+  "author": "Nicolás Parada <parada.nicolas@outlook.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nicolasparada/node-httptools/issues"
+  },
+  "homepage": "https://github.com/nicolasparada/node-httptools#readme"
+}
