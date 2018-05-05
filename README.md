@@ -93,6 +93,7 @@ function withAuthUser(next) {
 
 const handler = withAuthUser((req, res) => {
     const authUser = contextFor(req).get('auth_user')
+    res.end()
 })
 ```
 
