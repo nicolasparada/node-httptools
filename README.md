@@ -46,7 +46,7 @@ const api = createRouter({ prefix: '/api' })
 api.handle('GET', '/endpoint', handler)
 
 const router = createRouter()
-router.handle('*', '/api/*, api.requestListener)
+router.handle('*', '/api/*', api.requestListener)
 ```
 
 You can create a router with a prefix and pass its requestListener as a handler.
