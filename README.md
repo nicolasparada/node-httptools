@@ -2,31 +2,22 @@
 
 This package provides with common tools to complement the Node's HTTP server.
 
-**This package is shipped like a ES module, so run your app with [esm](https://github.com/standard-things/esm):**
+**This package is shipped like an ES module, so run your app with [esm](https://github.com/standard-things/esm):**
 ```bash
+npm i esm
 node -r esm main.js
 ```
 
-## Usage
+## Routing
+
 ```js
 import { createServer } from 'http'
-import { contextFor, createRouter, respondJSON } from '@nicolasparada/httptools'
-
-const api = createRouter({ prefix: '/api' })
-api.handle('GET', /^\/hello\/([^\/]+)$/, helloHandler)
+import { createRouter } from '@nicolasparada/httptools'
 
 const router = createRouter()
-router.handle('GET', '/', rootHandler)
-router.handle('*', /^\/api\//, api.requestListener)
-
-function rootHandler(req, res) {
-    res.end('Hi')
-}
-
-function helloHandler(req, res) {
-    const [name] = contextFor(req).get('params')
-    respondJSON(res, { message: `Hello, ${name}!` }, 200)
-}
+router.handle('GET', '/', (req, res) => {
+    res.end('Hello, world!')
+})
 
 const server = createServer(router.requestListener)
 server.listen(80, '127.0.0.1', () => {
@@ -34,47 +25,75 @@ server.listen(80, '127.0.0.1', () => {
 })
 ```
 
-To get URL params, use regular expressions. Then you can get an array with all the parameters using `contextFor(req).get('params')`.
+## URL Matching and Context
 
-To group endpoints, you can create multiple router instances and pass the `requestListener` to other routers.
-
-### Middlewares
 ```js
-import { contextFor, decodeJSON, respondJSON } from '@nicolasparada/http-tools'
+import { contextFor } from '@nicolasparada/httptools'
 
-const withJSONBody = next => async (req, res) => {
-    const ct = req.headers['content-type']
-    if (typeof ct !== 'string' || !ct.startsWith('application/json')) {
-        respondJSON(res, { message: 'JSON body required' }, 415)
-        return
-    }
+router.handle('GET', '/hello/{name}', (req, res) => {
+    const ctx = contextFor(req)
+    const params = ctx.get('params')
+    res.end(`Hello, ${params.name}!`)
+})
+```
 
+Inside the request context, you'll find a "params" object with all the URL parameters.
+
+## Sub-Routing
+
+```js
+const api = createRouter({ prefix: '/api' })
+api.handle('GET', '/endpoint', handler)
+
+const router = createRouter()
+router.handle('*', '/api/*, api.requestListener)
+```
+
+You can create a router with a prefix and pass its requestListener as a handler.
+
+## JSON Encoding
+
+```js
+import { respondJSON } from '@nicolasparada/httptools'
+
+function handler(req, res) {
+    respondJSON(res, { message: 'Hi' }, 200)
+}
+```
+
+## JSON Decoding
+
+```js
+import { decodeJSON } from '@nicolasparada/http-tools'
+
+async function handler(req, res) {
     let body
     try {
         body = await decodeJSON(req)
     } catch (err) {
-        respondJSON(res, { message: err.message }, 400)
+        res.statusCode = err.statusCode || 400
+        res.end(err.message)
         return
     }
 
-    contextFor(req).set('body', body)
-    return next(req, res)
-}
-
-router.handle('POST', '/endpoint', withJSONBody(handler))
-
-function handler(req, res) {
-    const body = contextFor(req).get('body')
-    respondJSON(res, { body }, 200)
+    res.end()
 }
 ```
 
-Middlewares are just function composition like so:
+## Middleware
+
 ```js
-const middleware = next => (req, res) => {
-    return next(req, res)
+function withAuthUser(next) {
+    return (req, res) => {
+        const authUser = /* Get auth user somehow */
+        contextFor(req).set('auth_user', authUser)
+        return next(req, res)
+    }
 }
-```
-Add values to the context like so: `contextFor(req).set('foo', 'bar')`.
 
-`decodeJSON` and `respondJSON` are self explanatories.
+const handler = withAuthUser((req, res) => {
+    const authUser = contextFor(req).get('auth_user')
+})
+```
+
+Use function composition for middleware.

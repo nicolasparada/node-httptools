@@ -1,5 +1,19 @@
-import http from 'http'
-import url from 'url'
+import http from 'http';
+import url from 'url';
+
+const contexts = new WeakMap()
+const paramRegexp = /\{([^\}]+)\}/gu
+const starRegexp = /\*/g
+
+/**
+ * @param {string} pattern
+ */
+function patternToRegexp(pattern) {
+    const patternString = pattern
+        .replace(paramRegexp, (_, param) => `(?<${param}>[^\/]+)`)
+        .replace(starRegexp, '.*')
+    return new RegExp(`^${patternString}$`, 'u')
+}
 
 /**
  * @param {http.IncomingMessage} req
@@ -7,9 +21,7 @@ import url from 'url'
  * @returns {void|Promise<void>}
  */
 function defaultNotFoundHandler(req, res) {
-    res.statusCode = 404
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-    res.end(http.STATUS_CODES[404])
+    respondText(res, http.STATUS_CODES[404], 404)
 }
 
 /**
@@ -17,18 +29,18 @@ function defaultNotFoundHandler(req, res) {
  * @param {http.ServerResponse} res
  * @returns {function(Error): void|Promise<void>}
  */
-const defaultErrorHandler = (req, res) => err => {
-    console.error(err)
-    res.statusCode = 500
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-    res.end(http.STATUS_CODES[500])
+function defaultErrorHandler(req, res) {
+    return err => {
+        console.error(err)
+        respondText(res, http.STATUS_CODES[500], 500)
+    }
 }
 
-export const createRouter = ({
+export function createRouter({
     prefix = '',
     notFoundHandler = defaultNotFoundHandler,
     errorHandler = defaultErrorHandler,
-} = {}) => {
+} = {}) {
     const routes = /** @type {Route[]} */ ([])
 
     /**
@@ -37,6 +49,8 @@ export const createRouter = ({
      * @param {Handler} handler
      */
     function handle(method, pattern, handler) {
+        if (typeof pattern === 'string')
+            pattern = patternToRegexp(pattern)
         routes.push({ method, pattern, handler })
     }
 
@@ -54,22 +68,15 @@ export const createRouter = ({
             if (route.method !== req.method && route.method !== '*')
                 continue
 
-            if (typeof route.pattern === 'string') {
-                if (route.pattern !== pathname)
-                    continue
-                executeHandler(route.handler, req, res)
-                return
-            }
-
             const match = route.pattern.exec(pathname)
             if (match === null) continue
 
-            contextFor(req).set('params', match.slice(1))
+            contextFor(req).set('params', match['groups'] || {})
             executeHandler(route.handler, req, res)
             return
         }
 
-        notFoundHandler(req, res)
+        executeHandler(notFoundHandler, req, res)
     }
 
     /**
@@ -88,32 +95,27 @@ export const createRouter = ({
     return { handle, requestListener }
 }
 
-const contexts = new WeakMap()
-
 /**
  * @param {*} key
  * @returns {Map}
  */
 export function contextFor(key) {
-    /** @type {Map} */ let context
-    if (contexts.has(key)) {
-        context = contexts.get(key)
-    } else {
-        context = new Map()
-        contexts.set(key, context)
-    }
+    if (contexts.has(key))
+        return contexts.get(key)
+    const context = new Map()
+    contexts.set(key, context)
     return context
 }
 
 /**
  * @param {http.ServerResponse} res
- * @param {*} payload
- * @param {number} statusCode
+ * @param {*} object
+ * @param {number=} statusCode
  */
-export function respondJSON(res, payload, statusCode) {
+export function respondJSON(res, object, statusCode = 200) {
     let json
     try {
-        json = JSON.stringify(payload)
+        json = JSON.stringify(object)
     } catch (err) {
         respondInternalError(res, new Error('could not JSON stringify response payload: ' + err.message))
         return
@@ -129,49 +131,52 @@ export function respondJSON(res, payload, statusCode) {
  */
 export function respondInternalError(res, err) {
     console.error(err)
-    respondJSON(res, { message: http.STATUS_CODES[500] }, 500)
+    respondText(res, http.STATUS_CODES[500], 500)
+}
+
+/**
+ * @param {http.ServerResponse} res
+ * @param {string} text
+ * @param {number=} statusCode
+ */
+export function respondText(res, text, statusCode = 200) {
+    res.statusCode = statusCode
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.end(text)
 }
 
 /**
  * @param {http.IncomingMessage} req
  */
-export const decodeJSON = req => new Promise((resolve, reject) => {
-    let chunks = []
-    req.on('data', chunk => {
-        chunks.push(chunk)
-    })
-    req.once('end', () => {
-        const data = Buffer.concat(chunks).toString('utf-8')
-        if (data === '') {
-            resolve({})
-            return
-        }
-        try {
-            const json = JSON.parse(data)
-            if (typeof json !== 'object' || json === null) {
-                reject(new Error('could not parse request body as JSON: only objects allowed'))
-                return
-            }
-            resolve(json)
-        } catch (err) {
-            reject(new Error('could not parse request body as JSON: ' + err.message))
-        }
-    })
-    req.once('error', err => {
-        reject(new Error('could not read request body: ' + err.message))
-    })
-    req.once('aborted', () => {
-        reject(new Error('request aborted'))
-    })
-    req.once('close', () => {
-        reject(new Error('request closed'))
-    })
-})
+export async function decodeJSON(req) {
+    const ct = req.headers['content-type']
+    if (typeof ct !== 'string' || !ct.startsWith('application/json')) {
+        const err = new Error('could not parse request body: content-type of "application/json" required')
+        err['statusCode'] = 415
+        throw err
+    }
+    req.setEncoding('utf-8')
+    let data = ''
+    // @ts-ignore
+    for await (const chunk of req)
+        data += chunk
+    if (data === '')
+        return {}
+    let json
+    try {
+        json = JSON.parse(data)
+    } catch (err) {
+        throw new Error('could not parse request body: ' + err.message)
+    }
+    if (typeof json !== 'object' || json === null)
+        throw new Error('could not parse request body: only objects allowed')
+    return json
+}
 
 /**
  * @typedef Route
  * @property {string} method
- * @property {string|RegExp} pattern
+ * @property {RegExp} pattern
  * @property {Handler} handler
  */
 
