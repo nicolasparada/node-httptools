@@ -1,5 +1,5 @@
-import { createServer } from 'http';
-import { contextFor, createRouter, respondText } from '../httptools.js';
+import http from 'http';
+import { contextFor, createRouter, respondText } from '../httptools.mjs';
 
 const router = createRouter()
 
@@ -12,7 +12,7 @@ router.handle('GET', '/hello/{name}', (req, res) => {
     respondText(res, `Hello, ${name}!`, 200)
 })
 
-const server = createServer(router.requestListener)
+const server = http.createServer(router.requestListener)
 server.listen(80, '127.0.0.1', () => {
     console.log('Server running at http://localhost/ 🚀')
 })

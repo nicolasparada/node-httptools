@@ -127,15 +127,6 @@ export function respondJSON(res, object, statusCode = 200) {
 
 /**
  * @param {http.ServerResponse} res
- * @param {Error} err
- */
-export function respondInternalError(res, err) {
-    console.error(err)
-    respondText(res, http.STATUS_CODES[500], 500)
-}
-
-/**
- * @param {http.ServerResponse} res
  * @param {string} text
  * @param {number=} statusCode
  */
@@ -143,6 +134,15 @@ export function respondText(res, text, statusCode = 200) {
     res.statusCode = statusCode
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     res.end(text)
+}
+
+/**
+ * @param {http.ServerResponse} res
+ * @param {Error} err
+ */
+export function respondInternalError(res, err) {
+    console.error(err)
+    respondText(res, http.STATUS_CODES[500], 500)
 }
 
 /**
@@ -171,6 +171,15 @@ export async function decodeJSON(req) {
     if (typeof json !== 'object' || json === null)
         throw new Error('could not parse request body: only objects allowed')
     return json
+}
+
+export default {
+    createRouter,
+    contextFor,
+    respondJSON,
+    respondText,
+    respondInternalError,
+    decodeJSON,
 }
 
 /**
