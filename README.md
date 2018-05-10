@@ -2,15 +2,16 @@
 
 This package provides with common tools to complement the Node's HTTP server.
 
-**This package is shipped like an ES module. You'll need Node.js >= 10.0.0 and run your app with `--experimental-modules`:**
+**This package is shipped like an ES module. You'll need to run your app with [esm](https://www.npmjs.com/package/esm):**
 ```bash
-node --experimental-modules main.mjs
+npm i esm
+node -r esm main.js
 ```
 
 ## Routing
 
 ```js
-import http from 'http'
+import { createServer } from 'http'
 import { createRouter } from '@nicolasparada/httptools'
 
 const router = createRouter()
@@ -18,7 +19,7 @@ router.handle('GET', '/', (req, res) => {
     res.end('Hello, world!')
 })
 
-const server = http.createServer(router.requestListener)
+const server = createServer(router.requestListener)
 server.listen(80, '127.0.0.1', () => {
     console.log('Server running at http://localhost/ 🚀')
 })

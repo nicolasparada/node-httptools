@@ -1,8 +1,8 @@
 {
   "name": "@nicolasparada/httptools",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "HTTP Tools",
-  "main": "httptools.mjs",
+  "main": "httptools.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

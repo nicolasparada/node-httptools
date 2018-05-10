@@ -4,14 +4,22 @@ import url from 'url';
 const contexts = new WeakMap()
 const paramRegexp = /\{([^\}]+)\}/gu
 const starRegexp = /\*/g
+const starReplace = '.*'
+
+/**
+ * @param {string} param
+ */
+function paramReplacer(_, param) {
+    return `(?<${param}>[^\/]+)`
+}
 
 /**
  * @param {string} pattern
  */
 function patternToRegexp(pattern) {
     const patternString = pattern
-        .replace(paramRegexp, (_, param) => `(?<${param}>[^\/]+)`)
-        .replace(starRegexp, '.*')
+        .replace(paramRegexp, paramReplacer)
+        .replace(starRegexp, starReplace)
     return new RegExp(`^${patternString}$`, 'u')
 }
 
@@ -31,8 +39,7 @@ function defaultNotFoundHandler(req, res) {
  */
 function defaultErrorHandler(req, res) {
     return err => {
-        console.error(err)
-        respondText(res, http.STATUS_CODES[500], 500)
+        respondInternalError(res, err)
     }
 }
 
@@ -49,9 +56,13 @@ export function createRouter({
      * @param {Handler} handler
      */
     function handle(method, pattern, handler) {
-        if (typeof pattern === 'string')
-            pattern = patternToRegexp(pattern)
-        routes.push({ method, pattern, handler })
+        routes.push({
+            method,
+            pattern: pattern instanceof RegExp
+                ? pattern
+                : patternToRegexp(pattern),
+            handler,
+        })
     }
 
     /**
@@ -162,15 +173,14 @@ export async function decodeJSON(req) {
         data += chunk
     if (data === '')
         return {}
-    let json
     try {
-        json = JSON.parse(data)
+        const json = JSON.parse(data)
+        if (typeof json !== 'object' || json === null || Array.isArray(json))
+            throw new Error('only plain objects allowed')
+        return json
     } catch (err) {
         throw new Error('could not parse request body: ' + err.message)
     }
-    if (typeof json !== 'object' || json === null)
-        throw new Error('could not parse request body: only objects allowed')
-    return json
 }
 
 export default {
