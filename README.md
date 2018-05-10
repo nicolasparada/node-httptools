@@ -1,4 +1,4 @@
-# [httptools](npm.im/@nicolasparada/httptools)
+# [httptools](https://www.npmjs.com/package/@nicolasparada/httptools)
 
 This package provides with common tools to complement the Node's HTTP server.
 
