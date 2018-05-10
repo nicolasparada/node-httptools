@@ -31,8 +31,7 @@ server.listen(80, '127.0.0.1', () => {
 import { contextFor } from '@nicolasparada/httptools'
 
 router.handle('GET', '/hello/{name}', (req, res) => {
-    const ctx = contextFor(req)
-    const params = ctx.get('params')
+    const params = contextFor(req).get('params')
     res.end(`Hello, ${params.name}!`)
 })
 ```
