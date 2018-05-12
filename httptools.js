@@ -4,6 +4,25 @@ import path from 'path';
 import url from 'url';
 
 const contexts = new WeakMap()
+const mimeTypes = {
+    '.css': 'text/css; charset=utf-8',
+    '.gif': 'image/gif',
+    '.html': 'text/html; charset=utf-8',
+    '.ico': 'image/x-icon',
+    '.jpeg': 'image/jpeg',
+    '.jpg': 'image/jpeg',
+    '.js': 'application/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.md': 'text/markdown; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
+    '.mp4': 'video/mp4',
+    '.png': 'image/png',
+    '.svg': 'image/svg',
+    '.txt': 'text/plain; charset=utf-8',
+    '.webm': 'video/webm',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+}
 const paramRegexp = /\{([^\}]+)\}/gu
 const starRegexp = /\*/g
 const starReplace = '.*'
@@ -252,27 +271,12 @@ export function createStaticHandler(dir, fallback = false) {
     }
 }
 
+/**
+ * @param {string} ext
+ * @returns {string}
+ */
 function getContentType(ext) {
-    switch (ext) {
-        case '.css': return 'text/css; charset=utf-8'
-        case '.gif': return 'image/gif'
-        case '.html': return 'text/html; charset=utf-8'
-        case '.jpeg': return 'image/jpeg'
-        case '.jpg': return 'image/jpeg'
-        case '.js': return 'application/javascript; charset=utf-8'
-        case '.json': return 'application/json; charset=utf-8'
-        case '.ico': return 'image/x-icon'
-        case '.md': return 'text/markdown; charset=utf-8'
-        case '.mjs': return 'application/javascript; charset=utf-8'
-        case '.mp4': return 'video/mp4'
-        case '.png': return 'image/png'
-        case '.svg': return 'image/svg'
-        case '.txt': return 'text/plain; charset=utf-8'
-        case '.webm': return 'video/webm'
-        case '.woff': return 'font/woff'
-        case '.woff2': return 'font/woff2'
-        default: return 'application/octet-stream'
-    }
+    return mimeTypes[ext] || 'application/octet-stream'
 }
 
 
