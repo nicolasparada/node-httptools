@@ -1,6 +1,6 @@
 {
   "name": "@nicolasparada/httptools",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "HTTP Tools",
   "main": "httptools.js",
   "scripts": {
