@@ -1,4 +1,6 @@
+import fs from 'fs';
 import http from 'http';
+import path from 'path';
 import url from 'url';
 
 const contexts = new WeakMap()
@@ -183,6 +185,92 @@ export async function decodeJSON(req) {
     }
 }
 
+/**
+ * @param {string} dir
+ * @param {boolean=} fallback
+ */
+export function createStaticHandler(dir, fallback = false) {
+    /**
+     * @param {http.IncomingMessage} req
+     * @param {http.ServerResponse} res
+     * @param {string} filepath
+     * @param {fs.Stats} stats
+     */
+    function serveFile(req, res, filepath, stats) {
+        const modifiedSinceHeader = req.headers['if-modified-since']
+        if (typeof modifiedSinceHeader === 'string') {
+            const modifiedSince = new Date(modifiedSinceHeader)
+            if (!isNaN(modifiedSince.valueOf()) && modifiedSince <= stats.mtime) {
+                res.statusCode = 304
+                res.end()
+                return
+            }
+        }
+
+        res.setHeader('Content-Length', stats.size)
+        res.setHeader('Content-Type', getContentType(path.extname(filepath)))
+        res.setHeader('Last-Modified', stats.mtime.toJSON())
+        fs.createReadStream(filepath).pipe(res)
+    }
+
+    /**
+     * @param {http.IncomingMessage} req
+     * @param {http.ServerResponse} res
+     */
+    return async function asyncHandler(req, res) {
+        const { pathname } = url.parse(req.url)
+        const filepath = path.join(dir, pathname.endsWith('/') ? pathname + 'index.html' : pathname)
+        let stats
+        try {
+            // @ts-ignore
+            stats = await fs.promises.stat(filepath)
+        } catch (_) {
+            const filepath = path.join(dir, '/index.html')
+            try {
+                // @ts-ignore
+                stats = await fs.promises.stat(filepath)
+            } catch (err) {
+                defaultErrorHandler(req, res)(new Error(`no fallback "${filepath}" found`))
+                return
+            }
+
+            serveFile(req, res, filepath, stats)
+            return
+        }
+
+        if (!stats.isFile()) {
+            defaultNotFoundHandler(req, res)
+            return
+        }
+
+        serveFile(req, res, filepath, stats)
+    }
+}
+
+function getContentType(ext) {
+    switch (ext) {
+        case '.css': return 'text/css; charset=utf-8'
+        case '.gif': return 'image/gif'
+        case '.html': return 'text/html; charset=utf-8'
+        case '.jpeg': return 'image/jpeg'
+        case '.jpg': return 'image/jpeg'
+        case '.js': return 'text/javascript; charset=utf-8'
+        case '.json': return 'text/json; charset=utf-8'
+        case '.ico': return 'image/x-icon'
+        case '.md': return 'text/markdown; charset=utf-8'
+        case '.mjs': return 'text/javascript; charset=utf-8'
+        case '.mp4': return 'video/mp4'
+        case '.png': return 'image/png'
+        case '.svg': return 'image/svg'
+        case '.txt': return 'text/plain; charset=utf-8'
+        case '.webm': return 'video/webm'
+        case '.woff': return 'font/woff'
+        case '.woff2': return 'font/woff2'
+        default: return 'application/octet-stream'
+    }
+}
+
+
 export default {
     createRouter,
     contextFor,
@@ -190,6 +278,7 @@ export default {
     respondText,
     respondInternalError,
     decodeJSON,
+    createStaticHandler
 }
 
 /**
