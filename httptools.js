@@ -225,6 +225,11 @@ export function createStaticHandler(dir, fallback = false) {
             // @ts-ignore
             stats = await fs.promises.stat(filepath)
         } catch (_) {
+            if (!fallback) {
+                defaultNotFoundHandler(req, res)
+                return
+            }
+
             const filepath = path.join(dir, '/index.html')
             try {
                 // @ts-ignore
