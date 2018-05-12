@@ -1,6 +1,6 @@
 {
   "name": "@nicolasparada/httptools",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "HTTP Tools",
   "main": "httptools.js",
   "scripts": {
@@ -13,7 +13,8 @@
   "keywords": [
     "router",
     "context",
-    "json"
+    "json",
+    "static"
   ],
   "author": "Nicolás Parada <parada.nicolas@outlook.com>",
   "license": "ISC",
