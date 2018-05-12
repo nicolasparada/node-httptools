@@ -23,25 +23,17 @@ const mimeTypes = {
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
 }
-const paramRegexp = /\{([^\}]+)\}/gu
-const starRegexp = /\*/g
-const starReplace = '.*'
-
-/**
- * @param {string} param
- */
-function paramReplacer(_, param) {
-    return `(?<${param}>[^\/]+)`
-}
 
 /**
  * @param {string} pattern
  */
-function patternToRegexp(pattern) {
-    const patternString = pattern
-        .replace(paramRegexp, paramReplacer)
-        .replace(starRegexp, starReplace)
-    return new RegExp(`^${patternString}$`, 'u')
+function paramRegexp(pattern) {
+    let i = 1
+    const groups = pattern
+        .replace(/\./g, '\\.')
+        .replace(/\{([\w_]+)\}/g, '(?<$1>[^\/]+)')
+        .replace(/\*/g, () => `(?<wildCard${i++}>.*)`)
+    return new RegExp(`^${groups}$`)
 }
 
 /**
@@ -81,7 +73,7 @@ export function createRouter({
             method,
             pattern: pattern instanceof RegExp
                 ? pattern
-                : patternToRegexp(pattern),
+                : paramRegexp(pattern),
             handler,
         })
     }
