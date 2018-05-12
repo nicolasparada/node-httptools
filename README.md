@@ -79,6 +79,19 @@ async function handler(req, res) {
 }
 ```
 
+## Static File Serving
+
+```js
+import path from 'path'
+import { createStaticHandler } from '@nicolasparada/httptools'
+
+const staticHandler = createStaticHandler(path.resolve('./static'))
+
+router.handle('GET', '/*', staticHandler)
+```
+
+`createStaticHandler()` accept a second boolean argument to serve `index.html` when no file is found. Used to serve single page applications.
+
 ## Middleware
 
 ```js
