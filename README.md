@@ -16,97 +16,60 @@ import { createRouter } from '@nicolasparada/httptools'
 
 const router = createRouter()
 router.handle('GET', '/', (req, res) => {
-    res.end('Hello, world!')
+    res.end('Hello there 🙂')
 })
 
 const server = createServer(router.requestListener)
-server.listen(80, '127.0.0.1', () => {
-    console.log('Server running at http://localhost/ 🚀')
+server.listen(3000, '127.0.0.1', () => {
+    console.log('Server running at http://localhost:3000/ 🚀')
 })
 ```
 
-## URL Matching and Context
+## Pattern Matching and Context
 
 ```js
 import { contextFor } from '@nicolasparada/httptools'
 
 router.handle('GET', '/hello/{name}', (req, res) => {
-    const params = contextFor(req).get('params')
+    const ctx = contextFor(req)
+    const params = ctx.get('params')
     res.end(`Hello, ${params.name}!`)
 })
 ```
 
 Inside the request context, you'll find a "params" object with all the URL parameters.
+Context can be filled with your own data. See [middleware](#middleware) below.
+
+## Middleware
+
+```js
+router.handler('GET', '/', withAuthUser(handler))
+
+function withAuthUser(next) {
+    return (req, res) => {
+        const authUser = { username: 'john_doe' }
+        contextFor(req).set('auth_user', authUser)
+        return next(req, res)
+    }
+}
+
+function handler(req, res) => {
+    const authUser = contextFor(req).get('auth_user')
+    console.log(authUser) // { username: 'john_doe' }
+    res.end()
+}
+```
+
+Just use function composition for middleware.
 
 ## Sub-Routing
 
 ```js
 const api = createRouter({ prefix: '/api' })
-api.handle('GET', '/endpoint', handler)
+api.handle('GET', '/', handler)
 
 const router = createRouter()
 router.handle('*', '/api/*', api.requestListener)
 ```
 
 You can create a router with a prefix and pass its requestListener as a handler.
-
-## JSON Encoding
-
-```js
-import { respondJSON } from '@nicolasparada/httptools'
-
-function handler(req, res) {
-    respondJSON(res, { message: 'Hi' })
-}
-```
-
-## JSON Decoding
-
-```js
-import { decodeJSON } from '@nicolasparada/http-tools'
-
-async function handler(req, res) {
-    let body
-    try {
-        body = await decodeJSON(req)
-    } catch (err) {
-        res.statusCode = err.statusCode || 400
-        res.end(err.message)
-        return
-    }
-
-    res.end()
-}
-```
-
-## Static File Serving
-
-```js
-import path from 'path'
-import { createStaticHandler } from '@nicolasparada/httptools'
-
-const staticHandler = createStaticHandler(path.resolve('./static'))
-
-router.handle('GET', '/*', staticHandler)
-```
-
-`createStaticHandler()` accept a second boolean argument to serve `index.html` when no file is found. Used to serve single page applications.
-
-## Middleware
-
-```js
-function withAuthUser(next) {
-    return (req, res) => {
-        const authUser = /* Get auth user somehow */
-        contextFor(req).set('auth_user', authUser)
-        return next(req, res)
-    }
-}
-
-const handler = withAuthUser((req, res) => {
-    const authUser = contextFor(req).get('auth_user')
-    res.end()
-})
-```
-
-Use function composition for middleware.
