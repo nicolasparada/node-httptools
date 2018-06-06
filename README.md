@@ -2,7 +2,7 @@
 
 This package provides a router and context module to complement Node's HTTP server.
 
-**This package is shipped like an ES module. You'll need to run your app with [esm](https://www.npmjs.com/package/esm):**
+**Shipped like an ES module. You'll need to run your app with [esm](https://www.npmjs.com/package/esm):**
 ```bash
 npm i esm
 node -r esm main.js
@@ -53,7 +53,7 @@ function withAuthUser(next) {
     }
 }
 
-function handler(req, res) => {
+function handler(req, res) {
     const authUser = contextFor(req).get('auth_user')
     console.log(authUser) // { username: 'john_doe' }
     res.end()
@@ -72,4 +72,4 @@ const router = createRouter()
 router.handle('*', '/api/*', api.requestListener)
 ```
 
-You can create a router with a prefix and pass its requestListener as a handler.
+You can create a router with a prefix and pass its requestListener as handler.
