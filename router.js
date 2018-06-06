@@ -2,7 +2,6 @@ import http from 'http';
 import url from 'url';
 import { contextFor } from './context.js';
 
-const _executeHandler = Symbol('_executeHandler')
 const _routes = Symbol('_routes')
 
 export class Router {
@@ -19,13 +18,12 @@ export class Router {
 
         this.handle = this.handle.bind(this)
         this.requestListener = this.requestListener.bind(this)
-        this[_executeHandler] = this[_executeHandler].bind(this)
     }
 
     /**
      * @param {string} method
      * @param {string|RegExp} pattern
-     * @param {Handler} handler
+     * @param {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} handler
      */
     handle(method, pattern, handler) {
         this[_routes].push({
@@ -58,29 +56,17 @@ export class Router {
             }
 
             const params = match.slice(1).map(decodeURIComponent)
+            // @ts-ignore
             for (const [key, val] of Object.entries(match.groups || {})) {
                 params[key] = decodeURIComponent(val)
             }
 
             contextFor(req).set('params', params)
-            this[_executeHandler](route.handler, req, res)
+            executeHandler(route.handler, this.errorHandler, req, res)
             return
         }
 
-        this[_executeHandler](this.notFoundHandler, req, res)
-    }
-
-    /**
-     * @param {Handler} handler
-     * @param {http.IncomingMessage} req
-     * @param {http.ServerResponse} res
-     */
-    async [_executeHandler](handler, req, res) {
-        try {
-            await handler(req, res)
-        } catch (err) {
-            this.errorHandler(err, req, res)
-        }
+        executeHandler(this.notFoundHandler, this.errorHandler, req, res)
     }
 }
 
@@ -102,6 +88,20 @@ function paramRegExp(pattern) {
         .replace(/\{([\w_]+)\}/g, '(?<$1>[^\/]+)')
         .replace(/\*/g, () => `(?<wildCard${i++}>.*)`)
     return new RegExp(`^${groups}$`)
+}
+
+/**
+ * @param {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} handler
+ * @param {function(Error, http.IncomingMessage, http.ServerResponse): void|Promise<void>} errorHandler
+ * @param {http.IncomingMessage} req
+ * @param {http.ServerResponse} res
+ */
+async function executeHandler(handler, errorHandler, req, res) {
+    try {
+        await handler(req, res)
+    } catch (err) {
+        errorHandler(err, req, res)
+    }
 }
 
 /**
@@ -138,9 +138,5 @@ function defaultErrorHandler(err, req, res) {
  * @typedef Route
  * @property {string} method
  * @property {RegExp} pattern
- * @property {Handler} handler
+ * @property {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} handler
  */
-
- /**
-  * @typedef {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} Handler
-  */
