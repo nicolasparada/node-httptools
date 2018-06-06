@@ -1,6 +1,6 @@
-# [httptools](https://www.npmjs.com/package/@nicolasparada/httptools)
+# [@nicolasparada/httptools](https://www.npmjs.com/package/@nicolasparada/httptools)
 
-This package provides with common tools to complement the Node's HTTP server.
+This package provides a router and context module to complement Node's HTTP server.
 
 **This package is shipped like an ES module. You'll need to run your app with [esm](https://www.npmjs.com/package/esm):**
 ```bash
