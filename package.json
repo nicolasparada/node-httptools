@@ -1,13 +1,13 @@
 {
   "name": "@nicolasparada/httptools",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "HTTP Tools",
   "main": "httptools.js",
   "files": [
     "context.js",
     "httptools.js",
     "router.js",
-    "urlutil.js"
+    "url.js"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
