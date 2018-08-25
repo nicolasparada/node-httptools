@@ -43,7 +43,7 @@ Context can be filled with your own data. See [middleware](#middleware) below.
 ## Middleware
 
 ```js
-router.handler('GET', '/', withAuthUser(handler))
+router.handle('GET', '/auth_user', withAuthUser(authUserHandler))
 
 function withAuthUser(next) {
     return (req, res) => {
@@ -53,10 +53,10 @@ function withAuthUser(next) {
     }
 }
 
-function handler(req, res) {
+function authUserHandler(req, res) {
     const authUser = contextFor(req).get('auth_user')
-    console.log(authUser) // { username: 'john_doe' }
-    res.end()
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    res.end(JSON.stringify(authUser)) // { username: 'john_doe' }
 }
 ```
 
