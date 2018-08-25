@@ -1,6 +1,6 @@
 # [@nicolasparada/httptools](https://www.npmjs.com/package/@nicolasparada/httptools)
 
-This package provides a router and context module to complement Node's HTTP server.
+This package provides some utilities to complement Node's HTTP server.
 
 **Shipped like an ES module. You'll need to run your app with [esm](https://www.npmjs.com/package/esm):**
 ```bash
@@ -19,7 +19,7 @@ router.handle('GET', '/', (req, res) => {
     res.end('Hello there 🙂')
 })
 
-const server = createServer(router.requestListener)
+const server = createServer(router.handler)
 server.listen(3000, '127.0.0.1', () => {
     console.log('Server running at http://localhost:3000/ 🚀')
 })
@@ -65,11 +65,13 @@ Just use function composition for middleware.
 ## Sub-Routing
 
 ```js
-const api = createRouter({ prefix: '/api' })
-api.handle('GET', '/', handler)
+import { createRouter, stripPrefix } from '@nicolasparada/httptools'
+
+const api = createRouter()
+api.handle('GET', '/messages', messagesHandler) // Handles GET /api/messages.
 
 const router = createRouter()
-router.handle('*', '/api/*', api.requestListener)
+router.handle('*', '/api/*', stripPrefix('/api', api.handler))
 ```
 
-You can create a router with a prefix and pass its requestListener as handler.
+`stripPrefix` is a middleware that strips the given prefix from the request URL. That way you can compose multiple routers.

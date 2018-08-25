@@ -1,29 +1,46 @@
-import http from 'http';
-import url from 'url';
+import * as url from 'url';
 import { contextFor } from './context.js';
 
+/**
+ * @typedef {function(import('http').IncomingMessage, import('http').ServerResponse): void|Promise<void>} Handler
+ */
+
+/**
+ * @typedef Route
+ * @property {string} method
+ * @property {RegExp} pattern
+ * @property {Handler} handler
+ */
+
+/**
+ * @typedef Options
+ * @property {Handler} notFoundHandler
+ * @property {function(import('http').IncomingMessage, import('http').ServerResponse, Error): void|Promise<void>} errorHandler
+ */
+
 const _routes = Symbol('_routes')
+const _executeHandler = Symbol('_executeHandler')
 
 export class Router {
-    constructor({
-        prefix = '',
-        notFoundHandler = defaultNotFoundHandler,
-        errorHandler = defaultErrorHandler,
-    } = {}) {
-        this.prefix = prefix
-        this.notFoundHandler = notFoundHandler
-        this.errorHandler = errorHandler
+    /**
+     * @param {Options=} opts
+     */
+    constructor(opts) {
+        const withOpts = isObject(opts)
+        this.notFoundHandler = withOpts && 'notFoundHandler' in opts ? opts.notFoundHandler : defaultNotFoundHandler
+        this.errorHandler = withOpts && 'errorHandler' in opts ? opts.errorHandler : defaultErrorHandler
 
         this[_routes] = /** @type {Route[]} */ ([])
 
         this.handle = this.handle.bind(this)
-        this.requestListener = this.requestListener.bind(this)
+        this.handler = this.handler.bind(this)
+        this[_executeHandler] = this[_executeHandler].bind(this)
     }
 
     /**
      * @param {string} method
      * @param {string|RegExp} pattern
-     * @param {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} handler
+     * @param {Handler} handler
      */
     handle(method, pattern, handler) {
         this[_routes].push({
@@ -36,15 +53,11 @@ export class Router {
     }
 
     /**
-     * @param {http.IncomingMessage} req
-     * @param {http.ServerResponse} res
+     * @param {import('http').IncomingMessage} req
+     * @param {import('http').ServerResponse} res
      */
-    requestListener(req, res) {
-        let { pathname } = url.parse(req.url)
-        if (this.prefix !== '' && pathname.startsWith(this.prefix)) {
-            pathname = pathname.substr(this.prefix.length)
-        }
-
+    handler(req, res) {
+        const { pathname } = url.parse(req.url)
         for (const route of this[_routes]) {
             if (route.method !== req.method && route.method !== '*') {
                 continue
@@ -56,60 +69,60 @@ export class Router {
             }
 
             const params = match.slice(1).map(decodeURIComponent)
-            // @ts-ignore
-            for (const [key, val] of Object.entries(match.groups || {})) {
-                params[key] = decodeURIComponent(val)
+            if (isObject(match.groups)) {
+                for (const [k, v] of Object.entries(match.groups)) {
+                    params[k] = decodeURIComponent(v)
+                }
             }
 
             contextFor(req).set('params', params)
-            executeHandler(route.handler, this.errorHandler, req, res)
+            this[_executeHandler](req, res, route.handler)
             return
         }
 
-        executeHandler(this.notFoundHandler, this.errorHandler, req, res)
+        this[_executeHandler](req, res)
+    }
+
+    /**
+     * @param {import('http').IncomingMessage} req
+     * @param {import('http').ServerResponse} res
+     * @param {Handler} handler
+     */
+    async [_executeHandler](req, res, handler = this.notFoundHandler) {
+        try {
+            await handler(req, res)
+        } catch (err) {
+            this.errorHandler(req, res, err)
+        }
     }
 }
 
-export function createRouter({
-    prefix = '',
-    notFoundHandler = defaultNotFoundHandler,
-    errorHandler = defaultErrorHandler,
-} = {}) {
-    return new Router({ prefix, notFoundHandler, errorHandler })
+/**
+ * @param {Options=} opts
+ */
+export function createRouter(opts) {
+    return new Router(opts)
+}
+
+function isObject(obj) {
+    return typeof obj === 'object' && obj !== null
 }
 
 /**
  * @param {string} pattern
  */
 function paramRegExp(pattern) {
-    let i = 1
     const groups = pattern
         .replace(/\./g, '\\.')
-        .replace(/\{([\w_]+)\}/g, '(?<$1>[^\/]+)')
-        .replace(/\*/g, () => `(?<wildCard${i++}>.*)`)
+        .replace(/\{([^}]+)\}/g, '(?<$1>[^\/]+)')
+        .replace(/\*/g, () => `(?<_>.*)`)
     return new RegExp(`^${groups}$`)
 }
 
 /**
- * @param {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} handler
- * @param {function(Error, http.IncomingMessage, http.ServerResponse): void|Promise<void>} errorHandler
- * @param {http.IncomingMessage} req
- * @param {http.ServerResponse} res
+ * @param {import('http').ServerResponse} res
  */
-async function executeHandler(handler, errorHandler, req, res) {
-    try {
-        await handler(req, res)
-    } catch (err) {
-        errorHandler(err, req, res)
-    }
-}
-
-/**
- * @param {http.IncomingMessage} req
- * @param {http.ServerResponse} res
- * @returns {void|Promise<void>}
- */
-function defaultNotFoundHandler(req, res) {
+function defaultNotFoundHandler(_, res) {
     res.statusCode = 404
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -117,12 +130,10 @@ function defaultNotFoundHandler(req, res) {
 }
 
 /**
+ * @param {import('http').ServerResponse} res
  * @param {Error} err
- * @param {http.IncomingMessage} req
- * @param {http.ServerResponse} res
- * @returns {void|Promise<void>}
  */
-function defaultErrorHandler(err, req, res) {
+function defaultErrorHandler(_, res, err) {
     console.error(err)
     if (!res.headersSent) {
         res.statusCode = 500
@@ -133,10 +144,3 @@ function defaultErrorHandler(err, req, res) {
         res.end('Internal Server Error')
     }
 }
-
-/**
- * @typedef Route
- * @property {string} method
- * @property {RegExp} pattern
- * @property {function(http.IncomingMessage, http.ServerResponse): void|Promise<void>} handler
- */

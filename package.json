@@ -1,12 +1,13 @@
 {
   "name": "@nicolasparada/httptools",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "HTTP Tools",
   "main": "httptools.js",
   "files": [
     "context.js",
     "httptools.js",
-    "router.js"
+    "router.js",
+    "urlutil.js"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,8 +17,7 @@
     "url": "git+https://github.com/nicolasparada/node-httptools.git"
   },
   "keywords": [
-    "router",
-    "context"
+    "router"
   ],
   "author": "Nicolás Parada <parada.nicolas@outlook.com>",
   "license": "ISC",
@@ -27,5 +27,8 @@
   "homepage": "https://github.com/nicolasparada/node-httptools#readme",
   "engines": {
     "node": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^10.9.0"
   }
 }
