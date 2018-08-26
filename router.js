@@ -38,7 +38,7 @@ export class Router {
     }
 
     /**
-     * @param {string} method
+     * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'} method
      * @param {string|RegExp} pattern
      * @param {Handler} handler
      */
