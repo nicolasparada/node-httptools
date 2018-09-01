@@ -1,9 +1,0 @@
-{
-    "private": true,
-    "scripts": {
-        "start": "node -r esm main.js"
-    },
-    "dependencies": {
-        "esm": "^3.0.0"
-    }
-}
