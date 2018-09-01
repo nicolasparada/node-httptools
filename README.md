@@ -25,6 +25,8 @@ server.listen(3000, '127.0.0.1', () => {
 })
 ```
 
+You can register HTTP handlers for a given HTTP verb and URL pattern.
+
 ## Pattern Matching and Context
 
 ```js
@@ -37,6 +39,8 @@ router.handle('GET', '/hello/{name}', (req, res) => {
 })
 ```
 
+You can capture parameters from the URL and save them to a variable with a curly braces syntax as shown there. It will capture until it finds a slash `/`.
+You can also use a wilcard `*` to capture anything.
 Inside the request context, you'll find a "params" object with all the URL parameters.
 Context can be filled with your own data. See [middleware](#middleware) below.
 
@@ -68,7 +72,7 @@ Just use function composition for middleware.
 import { createRouter, stripPrefix } from '@nicolasparada/httptools'
 
 const api = createRouter()
-api.handle('GET', '/messages', messagesHandler) // Handles GET /api/messages.
+api.handle('GET', '/', handler)
 
 const router = createRouter()
 router.handle('*', '/api/*', stripPrefix('/api', api.handler))
