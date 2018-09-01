@@ -14,8 +14,8 @@ import { contextFor } from './context.js';
 
 /**
  * @typedef Options
- * @property {Handler} notFoundHandler
- * @property {function(import('http').IncomingMessage, import('http').ServerResponse, Error): void|Promise<void>} errorHandler
+ * @property {Handler=} notFoundHandler
+ * @property {function(import('http').IncomingMessage, import('http').ServerResponse, Error): void|Promise<void>=} errorHandler
  */
 
 const _routes = Symbol('_routes')
