@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "checkJs": true,
-        "target": "es2018"
+        "module": "esnext",
+        "target": "esnext"
     }
 }
