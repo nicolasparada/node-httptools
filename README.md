@@ -2,7 +2,8 @@
 
 This package provides some utilities to complement Node's HTTP server.
 
-**Shipped like an ES module**
+**Shipped like an ES module.**
+Enable support with `--experimental-modules` and Node.js >= v12.0.0.
 
 ## Routing
 
