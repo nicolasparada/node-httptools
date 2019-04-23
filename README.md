@@ -2,11 +2,7 @@
 
 This package provides some utilities to complement Node's HTTP server.
 
-**Shipped like an ES module. You'll need to run your app with [esm](https://www.npmjs.com/package/esm):**
-```bash
-npm i esm
-node -r esm main.js
-```
+**Shipped like an ES module**
 
 ## Routing
 
